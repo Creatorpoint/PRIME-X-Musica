@@ -1,0 +1,206 @@
+<!-- PrimeXMusic V3 - NO YOUTUBE API KEY NEEDED (RapidAPI Search) -->
+<style>
+body{
+  margin:0;
+  background:#0d0d0d;
+  font-family:Arial;
+  color:white;
+}
+#app{max-width:1000px;margin:auto;padding:20px;}
+h1{text-align:center;color:#00eaff;font-size:38px;text-shadow:0 0 15px #00eaff;}
+#searchBox{display:flex;justify-content:center;margin-bottom:20px;}
+#searchInput{
+  width:70%;
+  padding:12px;
+  border:none;
+  border-radius:8px 0 0 8px;
+  outline:none;
+}
+#searchBtn{
+  padding:12px 20px;
+  border:none;
+  background:#00eaff;
+  color:black;
+  cursor:pointer;
+  border-radius:0 8px 8px 0;
+}
+#results{display:flex;flex-wrap:wrap;gap:15px;justify-content:center;}
+.card{
+  width:200px;
+  background:#111;
+  border-radius:8px;
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 0 10px rgba(0,0,0,0.5);
+  transition:0.3s;
+}
+.card:hover{transform:scale(1.06);}
+.card img{width:100%;}
+.card p{text-align:center;padding:8px;font-size:14px;}
+
+/* Player */
+#playerModal{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.9);
+  justify-content:center;
+  align-items:center;
+  z-index:2000;
+}
+#playerModal iframe{
+  width:90%;
+  height:420px;
+  border:none;
+  border-radius:10px;
+}
+#closeModal{
+  position:absolute;
+  top:10px;right:20px;
+  font-size:30px;
+  color:white;
+  cursor:pointer;
+}
+
+/* Welcome Popup */
+#welcomePopup{
+  position:fixed;
+  top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.95);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:3000;
+}
+#welcomePopup .box{
+  background:#111;
+  padding:30px;
+  border-radius:10px;
+  text-align:center;
+  width:85%;
+  max-width:350px;
+}
+#welcomePopup h2{color:#00eaff;}
+#welcomePopup a{
+  background:#00ffae;
+  padding:10px 20px;
+  display:inline-block;
+  margin-top:10px;
+  border-radius:6px;
+  color:black;
+  font-weight:bold;
+  text-decoration:none;
+}
+#welcomePopup button{
+  margin-top:15px;
+  padding:10px 20px;
+  background:#00eaff;
+  color:black;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+</style>
+
+<div id="app">
+  <h1>PrimeXMusic</h1>
+
+  <div id="searchBox">
+    <input id="searchInput" type="text" placeholder="Search songs...">
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<!-- Player -->
+<div id="playerModal">
+  <span id="closeModal">✖</span>
+  <iframe id="ytPlayer"></iframe>
+</div>
+
+<!-- Popup -->
+<div id="welcomePopup">
+  <div class="box">
+    <h2>Welcome to PrimeXMusic</h2>
+    <p>Join our Telegram Channel</p>
+    <a href="https://t.me/primexprem07" target="_blank">Join Telegram</a>
+    <button id="closeWelcome">Continue</button>
+  </div>
+</div>
+
+<script>
+const RAPID_KEY = "151daf439dmsh9dfb5ef94457a13p176fa4jsn3abbbe874a8e
+";  // ← यहां अपनी key paste करो
+const API_URL = "https://youtube-v3-data.p.rapidapi.com/search";
+
+window.onload = () => {
+  if(!localStorage.getItem("visited")){
+    document.getElementById("welcomePopup").style.display="flex";
+    localStorage.setItem("visited","yes");
+  }
+  autoLoad();
+};
+
+document.getElementById("closeWelcome").onclick = () => {
+  document.getElementById("welcomePopup").style.display="none";
+};
+
+document.getElementById("searchBtn").onclick = () => search();
+
+async function search(){
+  let q = document.getElementById("searchInput").value.trim();
+  if(!q){return;}
+  fetchSongs(q);
+}
+
+async function autoLoad(){
+  fetchSongs("latest hindi songs");
+}
+
+async function fetchSongs(query){
+  document.getElementById("results").innerHTML = "<p style='color:#fff;'>Loading...</p>";
+
+  try{
+    let res = await fetch(`${API_URL}?q=${encodeURIComponent(query)}&maxResults=20`, {
+      method:"GET",
+      headers:{
+        "x-rapidapi-key": RAPID_KEY,
+        "x-rapidapi-host": "youtube-v3-data.p.rapidapi.com"
+      }
+    });
+
+    let data = await res.json();
+    render(data.items || []);
+  }catch(e){
+    document.getElementById("results").innerHTML = "<p>Error loading songs...</p>";
+  }
+}
+
+function render(list){
+  let box = document.getElementById("results");
+  box.innerHTML = "";
+
+  list.forEach(v=>{
+    if(!v.videoId) return;
+
+    box.innerHTML += `
+      <div class="card" onclick="play('${v.videoId}')">
+        <img src="${v.thumbnail?.[1]?.url || ''}">
+        <p>${v.title}</p>
+      </div>
+    `;
+  });
+}
+
+function play(id){
+  document.getElementById("playerModal").style.display="flex";
+  document.getElementById("ytPlayer").src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+}
+
+document.getElementById("closeModal").onclick = () => {
+  document.getElementById("playerModal").style.display="none";
+  document.getElementById("ytPlayer").src = "";
+};
+</script>
